@@ -88,8 +88,9 @@
               <td>{{ index + 1 }}</td>
               <td>{{ item.kode_barang }}</td>
               <td>{{ item.nama }}</td>
-              <td>{{ getNamaKategori(item.kategori_id) }}</td>
-              <td>{{ getNamaMerk(item.merk_id) }}</td>
+              <td>{{ item.kategori?.nama_kategori || '-' }}</td>
+              <td>{{ item.merk?.nama_merk || '-' }}</td>
+              
               <td>{{ item.status }}</td>
               <td>{{ item.deskripsi }}</td>
               <td>{{ item.created_at }}</td>
@@ -115,7 +116,7 @@ export default {
   name: 'DaftarBarangPage',
   data() {
     return {
-      activeStatus: '',
+      activeStatus: 'tersedia', // lowercase agar cocok dengan normalisasi
       barangList: [],
       ruanganList: [],
       kategoriList: [],
@@ -126,10 +127,9 @@ export default {
         merk_id: '',
         status: '',
         ruangan_id: '',
-        deskripsi: '',
+        deskripsi: ''
       },
-      gambarFile: null, // untuk file gambar
-      previewImage: null // preview gambar sebelum upload
+      previewImage: null
     };
   },
   computed: {
@@ -138,35 +138,28 @@ export default {
       return user.role === 'ketua_yayasan';
     },
     filteredBarang() {
-      return Array.isArray(this.barangList)
-        ? this.barangList.filter(b => b.status === this.activeStatus)
-        : [];
+      return this.barangList.filter(b => b.status === this.activeStatus);
     }
   },
   methods: {
     setStatus(status) {
-      this.activeStatus = status;
+      this.activeStatus = status.toLowerCase().trim();
     },
     jumlahStatus(status) {
-      return this.barangList.filter(b => b.status === status).length;
-    },
-    getNamaKategori(id) {
-      const kategori = this.kategoriList.find(k => k.id === id);
-      return kategori ? kategori.nama_kategori : '-';
-    },
-    getNamaMerk(id) {
-      const merk = this.merkList.find(m => m.id === id);
-      return merk ? merk.nama_merk : '-';
-    },
-    getNamaRuangan(id) {
-      const ruangan = this.ruanganList.find(r => r.id === id);
-      return ruangan ? ruangan.nama : '-';
+      const normalized = status.toLowerCase().trim();
+      return this.barangList.filter(b => b.status === normalized).length;
     },
     async ambilDataBarang() {
       try {
-        const res = await fetch('http://localhost:3000/barang');
-        const data = await res.json();
-        this.barangList = Array.isArray(data) ? data : [];
+        const res = await this.$axios.get('http://127.0.0.1:8000/barang');
+        console.log('Data barang dari API:', res.data);
+        this.barangList = Array.isArray(res.data)
+          ? res.data.map(b => ({
+              ...b,
+              status: b.status?.toLowerCase().trim()
+            }))
+          : [];
+        console.log('Semua barang setelah normalisasi:', this.barangList);
       } catch (err) {
         console.error('Gagal ambil data barang:', err);
         this.barangList = [];
@@ -174,102 +167,61 @@ export default {
     },
     async ambilDataRuangan() {
       try {
-        const res = await fetch('http://localhost:3000/ruangan');
-        const data = await res.json();
-        this.ruanganList = data;
+        const res = await this.$api.get('/ruangan');
+        this.ruanganList = res.data;
       } catch (err) {
         console.error('Gagal ambil data ruangan:', err);
       }
     },
     async ambilDataKategori() {
       try {
-        const res = await fetch('http://localhost:3000/kategori');
-        const data = await res.json();
-        this.kategoriList = data;
+        const res = await this.$api.get('/kategori');
+        this.kategoriList = res.data;
       } catch (err) {
         console.error('Gagal ambil data kategori:', err);
       }
     },
     async ambilDataMerk() {
       try {
-        const res = await fetch('http://localhost:3000/merk');
-        const data = await res.json();
-        this.merkList = data;
+        const res = await this.$api.get('/merk');
+        this.merkList = res.data;
       } catch (err) {
         console.error('Gagal ambil data merk:', err);
-      }
-    },
-    handleFileUpload(event) {
-      const file = event.target.files[0];
-      if (file) {
-        this.gambarFile = file;
-
-        // preview gambar
-        const reader = new FileReader();
-        reader.onload = e => {
-          this.previewImage = e.target.result;
-        };
-        reader.readAsDataURL(file);
       }
     },
     async tambahBarang() {
       if (this.isKetuaYayasan) return;
 
+      const payload = {
+        nama: this.form.nama,
+        kategori_id: this.form.kategori_id,
+        merk_id: this.form.merk_id,
+        status: this.form.status,
+        ruangan_id: this.form.ruangan_id,
+        deskripsi: this.form.deskripsi,
+        kode_barang: Date.now()
+      };
+
       try {
-        let gambarFileName = '';
-
-        // Upload gambar dulu jika ada
-        if (this.gambarFile) {
-          const imgForm = new FormData();
-          imgForm.append('gambar', this.gambarFile);
-
-          const uploadRes = await fetch('http://localhost:3000/upload-gambar', {
-            method: 'POST',
-            body: imgForm,
-          });
-
-          if (!uploadRes.ok) {
-            console.error('Gagal upload gambar');
-            return;
-          }
-          const uploadData = await uploadRes.json();
-          gambarFileName = uploadData.filename;
-        }
-
-        // Submit data barang pakai JSON
-        const payload = {
-          nama: this.form.nama,
-          kategori_id: this.form.kategori_id,
-          merk_id: this.form.merk_id,
-          status: this.form.status,
-          ruangan_id: this.form.ruangan_id,
-          deskripsi: this.form.deskripsi,
-          gambar: gambarFileName,
+        await this.$api.post('/barang', payload);
+        this.form = {
+          nama: '',
+          kategori_id: '',
+          merk_id: '',
+          status: '',
+          ruangan_id: '',
+          deskripsi: ''
         };
-
-        const res = await fetch('http://localhost:3000/barang', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-
-        if (res.ok) {
-          this.form = {
-            nama: '',
-            kategori_id: '',
-            merk_id: '',
-            status: '',
-            ruangan_id: '',
-            deskripsi: ''
-          };
-          this.gambarFile = null;
-          this.previewImage = null;
-          this.ambilDataBarang();
-        } else {
-          console.error('Gagal tambah barang');
-        }
+        this.previewImage = null;
+        this.ambilDataBarang();
       } catch (err) {
-        console.error('Gagal koneksi ke server:', err);
+        console.error('Gagal tambah barang:', err);
+      }
+    },
+    handleFileUpload(event) {
+      const file = event.target.files[0];
+      if (file) {
+        this.previewImage = URL.createObjectURL(file);
       }
     }
   },
@@ -278,7 +230,6 @@ export default {
     this.ambilDataRuangan();
     this.ambilDataKategori();
     this.ambilDataMerk();
-    this.activeStatus = 'Tersedia';
   },
   watch: {
     'form.status'(newStatus) {
@@ -289,6 +240,10 @@ export default {
   }
 };
 </script>
+
+
+
+
 
 <style scoped>
 .main-content {

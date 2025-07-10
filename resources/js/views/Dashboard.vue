@@ -139,15 +139,18 @@ export default {
   },
   methods: {
     async fetchBarang() {
-      const res = await axios.get('http://127.0.0.1:8000/barang')
+      const res = await this.$api.get('/api/barang')
+       console.log('Isi res.data:', res.data)
       this.barangList = res.data
     },
     async fetchKategori() {
-      const res = await axios.get('http://127.0.0.1:8000/kategori')
+      const res = await this.$api.get('/api/kategori')
+      console.log('Isi res.data:', res.data)
       this.kategoriList = res.data.map(k => k.nama_kategori) // sesuaikan field
     },
     async fetchRuangan() {
-      const res = await axios.get('http://127.0.0.1:8000/ruangan')
+      const res = await this.$api.get('/api/ruangan')
+      console.log('Isi res.data:', res.data)
       this.ruanganList = res.data.map(r => r.nama) // sesuaikan field
     },
     async fetchPengguna() {
