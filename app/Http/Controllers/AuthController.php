@@ -24,12 +24,18 @@ class AuthController extends Controller
             ], 401);
         }
 
-        $token = $user->createToken('token')->plainTextToken;
+        // Login menggunakan session (bukan token)
+        Auth::login($user);
 
         return response()->json([
-            'access_token' => $token,
-            'token_type' => 'Bearer',
+            'message' => 'Login berhasil',
             'user' => $user
         ]);
+    }
+
+    public function logout()
+    {
+        Auth::logout(); // Logout pengguna
+        return response()->json(['message' => 'Logout berhasil']);
     }
 }

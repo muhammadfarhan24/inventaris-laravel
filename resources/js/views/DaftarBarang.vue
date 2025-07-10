@@ -143,7 +143,7 @@ export default {
     },
     async ambilDataBarang() {
       try {
-        const res = await this.$axios.get('http://127.0.0.1:8000/api/barang');
+        const res = await this.$api.get('/api/barang')
         this.barangList = Array.isArray(res.data)
           ? res.data.map(b => ({
               ...b,
@@ -157,7 +157,7 @@ export default {
     },
     async ambilDataRuangan() {
       try {
-        const res = await this.$axios.get('http://127.0.0.1:8000/api/ruangan');
+        const res = await this.$api.get('/api/ruangan')
         this.ruanganList = res.data;
       } catch (err) {
         console.error('Gagal ambil data ruangan:', err);
@@ -165,7 +165,7 @@ export default {
     },
     async ambilDataKategori() {
       try {
-        const res = await this.$axios.get('http://127.0.0.1:8000/api/kategori');
+        const res = await this.$api.get('/api/kategori')
         this.kategoriList = res.data;
       } catch (err) {
         console.error('Gagal ambil data kategori:', err);
@@ -173,7 +173,7 @@ export default {
     },
     async ambilDataMerk() {
       try {
-        const res = await this.$axios.get('http://127.0.0.1:8000/api/merk');
+        const res = await this.$api.get('/api/merk')
         this.merkList = res.data;
       } catch (err) {
         console.error('Gagal ambil data merk:', err);
@@ -197,7 +197,7 @@ export default {
       };
 
       try {
-        await this.$axios.post('http://127.0.0.1:8000/api/barang', payload);
+        const res = await this.$api.get('/api/barang', payload);
         this.form = {
           nama: '',
           kategori_id: '',

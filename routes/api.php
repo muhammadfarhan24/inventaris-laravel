@@ -37,15 +37,16 @@ Route::put('/ruangan/{id}', [RuanganController::class, 'update']);
 Route::delete('/ruangan/{id}', [RuanganController::class, 'destroy']);
 
 // route untuk peminjaman
-Route::get('/peminjaman', [PeminjamanController::class, 'index']);
-Route::post('/peminjaman', [PeminjamanController::class, 'store']);
-Route::put('/peminjaman/{id}', [PeminjamanController::class, 'update']);
-Route::delete('/peminjaman/{id}', [PeminjamanController::class, 'destroy']);
-Route::post('/peminjaman/setujui/{id}', [PeminjamanController::class, 'setujui']);
-Route::post('/peminjaman/{id}/tolak', [PeminjamanController::class, 'tolak']);
-Route::post('/peminjaman/kembalikan/{id}', [PeminjamanController::class, 'kembalikan']);
-Route::post('/peminjaman/{id}/setujui', [PeminjamanController::class, 'setujui']);
-// Route::post('/peminjaman/{id}/tolak', [PeminjamanController::class, 'tolak']);
+Route::middleware(['auth', 'role:admin,ketua_masjid,ketua_yayasan'])->group(function () {
+    // Rute untuk peminjaman
+    Route::get('/peminjaman', [PeminjamanController::class, 'index']);
+    Route::post('/peminjaman', [PeminjamanController::class, 'store']);
+    Route::put('/peminjaman/{id}', [PeminjamanController::class, 'update']);
+    Route::delete('/peminjaman/{id}', [PeminjamanController::class, 'destroy']);
+    Route::post('/peminjaman/setujui/{id}', [PeminjamanController::class, 'setujui']);
+    Route::post('/peminjaman/{id}/tolak', [PeminjamanController::class, 'tolak']);
+    Route::post('/peminjaman/kembalikan/{id}', [PeminjamanController::class, 'kembalikan']);
+});
 
 //route untuk service barang
 Route::get('/service-barang', [ServiceBarangController::class, 'index']);
@@ -59,27 +60,23 @@ Route::get('/status', [StatusController::class, 'getStatus']);
 Route::get('/barang/status/{status}', [StatusController::class, 'getBarangByStatus']);
 
 
-Route::post('/login', [AuthController::class, 'login']);
-Route::middleware('auth:sanctum')->get('/user', [AuthController::class, 'user']);
-Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logout']);
-
-
-Route::middleware(['auth:sanctum', 'role:admin,ketua_masjid'])->group(function () {
-    Route::post('/peminjaman/{id}/setujui', [PeminjamanController::class, 'setujui']);
-});
-
-Route::middleware(['auth:sanctum', 'role:admin,ketua_masjid,ketua_yayasan'])->group(function () {
-    Route::get('/peminjaman', [PeminjamanController::class, 'index']);
-});
-
-
-
-Route::middleware(['auth:sanctum'])->group(function () {
+Route::middleware(['auth'])->group(function () {
     // Semua role bisa melihat daftar user
     Route::get('/user', [UserController::class, 'index']);
-
+    
     // Hanya admin bisa menambah, edit, hapus user
     Route::post('/user', [UserController::class, 'store']);
     Route::put('/user/{id}', [UserController::class, 'update']);
     Route::delete('/user/{id}', [UserController::class, 'destroy']);
 });
+
+// Route::middleware(['auth:sanctum', 'role:admin,ketua_masjid'])->group(function () {
+//     Route::post('/peminjaman/{id}/setujui', [PeminjamanController::class, 'setujui']);
+// });
+
+// Route::middleware(['auth:sanctum', 'role:admin,ketua_masjid,ketua_yayasan'])->group(function () {
+//     Route::get('/peminjaman', [PeminjamanController::class, 'index']);
+// });
+
+
+

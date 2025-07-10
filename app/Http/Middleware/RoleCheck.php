@@ -11,7 +11,7 @@ class RoleCheck
 {
     public function handle(Request $request, Closure $next, ...$roles): Response
     {
-        $user = Auth::user();
+        $user = Auth::user(); // Mendapatkan user dari sesi
 
         if (!$user || !in_array($user->role, $roles)) {
             return response()->json(['message' => 'Akses ditolak'], 403);

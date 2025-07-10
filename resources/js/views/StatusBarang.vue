@@ -10,11 +10,11 @@
         @click="filterStatus(status.status)"
       >
         <h3>{{ status.status }}</h3>
-        <p>{{ status.jumlah }}Barang</p>
+        <p>{{ status.jumlah }} Barang</p>
       </div>
     </div>
 
-    <div class="table-container" v-if="selectedStatus && filteredBarang.length" >
+    <div class="table-container" v-if="selectedStatus && filteredBarang.length">
       <button class="close-btn" @click="selectedStatus = ''">Tutup</button>
       <h3>Daftar Barang: {{ selectedStatus }}</h3>
       <table class="status-table">
@@ -31,7 +31,7 @@
           <tr v-for="(barang, index) in filteredBarang" :key="barang.id">
             <td>{{ index + 1 }}</td>
             <td>{{ barang.nama }}</td>
-            <td>{{ barang.merk }}</td>
+            <td>{{ barang.merk ? barang.merk.nama_merk : 'Tidak Ada Merk' }}</td> <!-- Menampilkan merk -->
             <td>{{ barang.status }}</td>
             <td>{{ barang.deskripsi }}</td>
           </tr>
@@ -46,34 +46,32 @@ export default {
   name: 'StatusBarang',
   data() {
     return {
-      statusList: [],
-      allBarang: [],
-      selectedStatus: ''
+      statusList: [],       // Untuk menampung daftar status barang
+      filteredBarang: [],   // Barang yang difilter berdasarkan status
+      selectedStatus: ''    // Status yang dipilih
     };
   },
-  computed: {
-    filteredBarang() {
-      return this.allBarang;
-    }
-  },
   mounted() {
-    this.fetchStatusList();
+    this.fetchStatusList();  // Ambil data status barang ketika komponen pertama kali dimuat
   },
   methods: {
+    // Mengambil daftar status barang
     fetchStatusList() {
-      fetch('http://localhost:3000/status')
+      fetch('http://localhost:8000/api/status')  // Ganti URL sesuai dengan backend
         .then(res => res.json())
         .then(data => {
           this.statusList = data;
         })
         .catch(err => console.error("Gagal ambil data status:", err));
     },
+    
+    // Menampilkan daftar barang berdasarkan status yang dipilih
     filterStatus(status) {
       this.selectedStatus = status;
-      fetch(`http://localhost:3000/status/filter?status=${status}`)
+      fetch(`http://localhost:8000/api/barang/status/${status}`)  // Ganti URL sesuai dengan backend
         .then(res => res.json())
         .then(data => {
-          this.allBarang = data;
+          this.filteredBarang = data;  // Set barang yang difilter berdasarkan status
         })
         .catch(err => console.error("Gagal ambil data barang:", err));
     }

@@ -95,7 +95,7 @@
 
 <script>
 export default {
-  name: 'GudangTanggaB',
+  name: 'GudangImamA',
   data() {
     return {
       searchQuery: '',
@@ -126,7 +126,7 @@ export default {
   },
   methods: {
     fetchBarang() {
-      fetch('http://localhost:3000/barang')
+      fetch('http://127.0.0.1:8000/api/barang?ruangan_id=4')
         .then(res => res.json())
         .then(data => {
           this.barangList = data.filter(item => item.ruangan_id == 4);
@@ -134,14 +134,14 @@ export default {
         .catch(err => console.error(err));
     },
     fetchKategori() {
-      fetch('http://localhost:3000/kategori')
+      fetch('http://127.0.0.1:8000/api/kategori')
         .then(res => res.json())
         .then(data => {
           this.kategoriList = data;
         });
     },
     fetchMerk() {
-      fetch('http://localhost:3000/merk')
+      fetch('http://127.0.0.1:8000/api/merk')
         .then(res => res.json())
         .then(data => {
           this.merkList = data;
@@ -172,7 +172,7 @@ export default {
       };
     },
     submitEdit() {
-  fetch(`http://localhost:3000/barang/${this.form.id}`, {
+  fetch(`http://127.0.0.1:8000/api/barang/${this.form.id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(this.form)
@@ -205,7 +205,7 @@ export default {
     },
     deleteBarang(id) {
       if (confirm('Yakin ingin menghapus barang ini?')) {
-        fetch(`http://localhost:3000/barang?id=${id}`, {
+        fetch(`http://127.0.0.1:8000/api/barang/${id}`, {
           method: 'DELETE'
         })
           .then(() => this.fetchBarang())

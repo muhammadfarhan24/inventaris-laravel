@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Auth;
 
 class UserController extends Controller
 {
@@ -68,11 +69,10 @@ class UserController extends Controller
     // Fungsi bantu cek admin
     private function authorizeAdmin()
     {
-        $user = auth('sanctum')->user();
+        $user = Auth::user(); // Mendapatkan user dari sesi
 
         if (!$user || $user->role !== 'admin') {
             abort(403, 'Akses ditolak');
         }
     }
-
 }

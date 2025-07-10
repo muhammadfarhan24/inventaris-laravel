@@ -149,7 +149,7 @@ export default {
       this.ruanganList = res.data.map(r => r.nama) // sesuaikan field
     },
     async fetchPengguna() {
-      const res = await axios.get('http://127.0.0.1:8000/user')
+      const res = await axios.get('http://127.0.0.1:8000/api/user')
       this.penggunaList = res.data
     }
   }

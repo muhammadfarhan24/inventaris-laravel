@@ -52,7 +52,7 @@
         <tbody>
           <tr v-for="(item, index) in serviceList" :key="item.id">
             <td>{{ index + 1 }}</td>
-            <td>{{ item.nama_barang }}</td>
+            <td>{{ item.barang ? item.barang.nama : 'Data Barang Tidak Ditemukan' }}</td> <!-- Menampilkan nama barang -->
             <td>{{ item.deskripsi }}</td>
             <td>{{ item.tanggal_service }}</td>
             <td>{{ item.status }}</td>
@@ -106,23 +106,33 @@ export default {
     this.ambilBarangList();
   },
   methods: {
+    // Ambil daftar service barang
     getServiceList() {
-      fetch("http://localhost:3000/service")
+      fetch("http://localhost:8000/api/service-barang")
         .then(res => res.json())
         .then(data => {
-          this.serviceList = data;
+          console.log("Data Service:", data);  // Periksa data di console
+          this.serviceList = data;  // Mengisi data ke dalam serviceList
         })
-        .catch(() => alert("Gagal mengambil data service."));
+        .catch((error) => {
+          console.error("Gagal mengambil data service:", error);
+          alert("Gagal mengambil data service.");
+        });
     },
+
+    // Ambil daftar barang yang rusak
     async ambilBarangList() {
       try {
-        const res = await fetch("http://localhost:3000/barang");
+        const res = await fetch("http://localhost:8000/api/barang");
         const data = await res.json();
+        console.log("Barang List:", data);  // Periksa data barang yang diterima
         this.barangList = data.filter(b => b.status === "Rusak");
       } catch (err) {
         console.error("Gagal mengambil data barang:", err);
       }
     },
+
+    // Menambah barang ke service
     tambahService() {
       if (this.isKetuaYayasan) {
         alert('Anda tidak memiliki akses untuk menambah service.');
@@ -134,7 +144,7 @@ export default {
         tanggal_service: this.form.tanggalMasuk,
         status: "Dalam Service"
       };
-      fetch("http://localhost:3000/service", {
+      fetch("http://localhost:8000/api/service-barang", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
@@ -146,24 +156,28 @@ export default {
         })
         .catch(() => alert("Gagal menambah data."));
     },
+
+    // Menandai service sebagai selesai
     selesaiService(id) {
       if (this.isKetuaYayasan) {
         alert('Anda tidak memiliki akses untuk mengubah status service.');
         return;
       }
-      fetch(`http://localhost:3000/service/selesai?id=${id}`, {
+      fetch(`http://localhost:8000/api/service-barang/selesai?id=${id}`, {
         method: "PUT"
       })
         .then(() => this.getServiceList())
         .catch(() => alert("Gagal update status."));
     },
+
+    // Menghapus data service
     hapusService(id) {
       if (this.isKetuaYayasan) {
         alert('Anda tidak memiliki akses untuk menghapus service.');
         return;
       }
       if (!confirm("Hapus data service ini?")) return;
-      fetch(`http://localhost:3000/service?id=${id}`, {
+      fetch(`http://localhost:8000/api/service-barang/${id}`, {
         method: "DELETE"
       })
         .then(() => this.getServiceList())

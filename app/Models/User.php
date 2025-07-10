@@ -9,6 +9,7 @@ use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
+     public $timestamps = false;
     use HasApiTokens, HasFactory, Notifiable;
 
     protected $table = 'user'; // karena kamu pakai nama tabel 'user' bukan 'users'

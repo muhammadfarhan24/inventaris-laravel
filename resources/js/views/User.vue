@@ -12,7 +12,7 @@
 
       <!-- Form Tambah User -->
       <div v-if="showFormTambah" class="form-tambah">
-        <input v-model="formUser.nama" placeholder="Nama" />
+        <input v-model="formUser.name" placeholder="Nama" />
         <input v-model="formUser.username" placeholder="Username" />
         <input v-model="formUser.password" placeholder="Password" type="password" />
         <select v-model="formUser.role">
@@ -27,7 +27,7 @@
 
       <!-- Form Edit User -->
       <div v-if="showFormEdit" class="form-tambah">
-        <input v-model="editUserData.nama" placeholder="Nama" />
+        <input v-model="editUserData.name" placeholder="Nama" />
         <input v-model="editUserData.username" placeholder="Username" />
         <input v-model="editUserData.password" type="password" placeholder="Password baru (opsional)" />
         <select v-model="editUserData.role">
@@ -56,7 +56,7 @@
           <tbody>
             <tr v-for="(user, index) in filteredUsers" :key="user.id">
               <td>{{ index + 1 }}</td>
-              <td>{{ user.nama }}</td>
+              <td>{{ user.nama }}</td> <!-- Ganti 'name' dengan 'nama' jika API menggunakan nama -->
               <td>{{ user.username }}</td>
               <td>{{ user.role }}</td>
               <td>{{ user.status }}</td>
@@ -76,7 +76,7 @@
     <!-- NON-ADMIN VIEW -->
     <div v-else class="user-profile">
       <div class="profile-box">
-        <p><strong>Nama:</strong> {{ currentUser.nama }}</p>
+        <p><strong>Nama:</strong> {{ currentUser.name }}</p>
         <p><strong>Username:</strong> {{ currentUser.username }}</p>
         <p><strong>Role:</strong> {{ currentUser.role }}</p>
         <p><strong>Status:</strong> {{ currentUser.status }}</p>
@@ -86,7 +86,7 @@
 
       <!-- Form Edit Profil -->
       <div v-if="showEditProfil" class="form-tambah">
-        <input v-model="currentUser.nama" placeholder="Nama" />
+        <input v-model="currentUser.name" placeholder="Nama" />
         <input v-model="currentUser.username" placeholder="Username" />
         <button @click="simpanProfil">Simpan Perubahan</button>
         <button @click="showEditProfil = false">Batal</button>
@@ -141,24 +141,16 @@ export default {
     filteredUsers() {
       const q = this.searchQuery.toLowerCase();
       return this.users.filter(user =>
-        user.name.toLowerCase().includes(q) ||
+        user.nama.toLowerCase().includes(q) ||
         user.username.toLowerCase().includes(q) ||
         user.role.toLowerCase().includes(q)
       );
     }
   },
   methods: {
-    getHeaders() {
-      const token = localStorage.getItem('token');
-      return {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      };
-    },
     async fetchUsers() {
       try {
-        const res = await axios.get('http://127.0.0.1:8000/api/user', this.getHeaders());
+        const res = await axios.get('http://127.0.0.1:8000/api/user');
         this.users = res.data;
       } catch (err) {
         console.error('Gagal memuat user:', err);
@@ -188,7 +180,13 @@ export default {
     },
     async simpanUserBaru() {
       try {
-        await axios.post('http://127.0.0.1:8000/api/user', this.formUser, this.getHeaders());
+        await axios.post('http://127.0.0.1:8000/api/user', {
+          name: this.formUser.name, // Ganti dengan 'nama' sesuai API
+          username: this.formUser.username,
+          password: this.formUser.password,
+          role: this.formUser.role,
+          status: this.formUser.status
+        }, this.getHeaders());
         this.showFormTambah = false;
         this.fetchUsers();
       } catch (err) {
@@ -206,7 +204,13 @@ export default {
     },
     async simpanEditUser() {
       try {
-        await axios.put(`http://127.0.0.1:8000/api/user/${this.editUserData.id}`, this.editUserData, this.getHeaders());
+        await axios.put(`http://127.0.0.1:8000/api/user/${this.editUserData.id}`, {
+          name: this.editUserData.name, // Ganti dengan 'nama' sesuai API
+          username: this.editUserData.username,
+          password: this.editUserData.password || '', // Kosongkan password jika tidak diubah
+          role: this.editUserData.role,
+          status: this.editUserData.status
+        }, this.getHeaders());
         this.showFormEdit = false;
         this.fetchUsers();
       } catch (err) {
@@ -220,12 +224,13 @@ export default {
     async simpanProfil() {
       try {
         await axios.put(`http://127.0.0.1:8000/api/user/${this.currentUser.id}`, {
-          ...this.currentUser,
-          password: ''
+          name: this.currentUser.name, // Ganti dengan 'nama' sesuai API
+          username: this.currentUser.username,
+          password: '' // Kosongkan password jika tidak diubah
         }, this.getHeaders());
         alert("Profil berhasil diperbarui");
         this.showEditProfil = false;
-        localStorage.setItem('user', JSON.stringify(this.currentUser));
+        localStorage.setItem('user', JSON.stringify(this.currentUser)); // Update di localStorage
       } catch (err) {
         alert("Gagal memperbarui profil");
         console.error(err);
@@ -235,32 +240,23 @@ export default {
       this.showGantiPassword = true;
     },
     async simpanPasswordBaru() {
-      if (!this.newPassword) {
-        alert("Password tidak boleh kosong");
-        return;
-      }
       try {
-        await axios.put(`http://127.0.0.1:8000/api/user/${this.currentUser.id}`, {
-          ...this.currentUser,
+        await axios.put(`http://127.0.0.1:8000/api/user/${this.currentUser.id}/password`, {
           password: this.newPassword
         }, this.getHeaders());
-        alert("Password berhasil diubah");
+        alert("Password berhasil diperbarui");
         this.showGantiPassword = false;
-        this.newPassword = '';
       } catch (err) {
-        alert("Gagal mengubah password");
+        alert("Gagal memperbarui password");
         console.error(err);
       }
     }
   },
   mounted() {
-    if (this.isAdmin) {
-      this.fetchUsers();
-    }
+    this.fetchUsers();
   }
-}
+};
 </script>
-
 
 <style scoped>
 .user-page {

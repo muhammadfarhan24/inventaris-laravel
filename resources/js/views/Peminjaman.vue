@@ -159,178 +159,97 @@
 export default {
   data() {
     return {
-      currentUser: JSON.parse(localStorage.getItem('user')) || {},
       daftarPeminjaman: [],
       riwayatPeminjaman: [],
       barangTersedia: [],
-      selectedBarang: null,
       formData: {
-        id: null,
-        barang_id: '',
+        barang_id: null,
         peminjam: '',
         tanggal_peminjam: '',
         tanggal_kembali: '',
         status_pengembalian: 'Dipinjam',
-        status_peminjaman: 'Menunggu Persetujuan'
       },
+      searchQuery: '',
       showForm: false,
-      isEdit: false,
-      searchQuery: ''
     };
+  },
+  created() {
+    this.fetchPeminjaman();
+    this.fetchBarangTersedia();
   },
   computed: {
     filteredPeminjaman() {
-      const q = this.searchQuery.toLowerCase();
       return this.daftarPeminjaman.filter(item =>
-        item.peminjam.toLowerCase().includes(q) ||
-        item.nama_barang.toLowerCase().includes(q)
+        item.peminjam.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+        item.nama_barang.toLowerCase().includes(this.searchQuery.toLowerCase())
       );
-    },
-    isKetuaMasjid() {
-      return this.currentUser?.role === 'ketua_masjid';
-    },
-    isKetuaYayasan() {
-      return this.currentUser?.role === 'ketua_yayasan';
     }
   },
   methods: {
     async fetchPeminjaman() {
       try {
-        const res = await fetch('http://localhost:3000/peminjaman');
+        const res = await fetch('http://127.0.0.1:8000/api/peminjaman');
         const data = await res.json();
         this.daftarPeminjaman = data.filter(item => item.status_pengembalian === 'Dipinjam');
         this.riwayatPeminjaman = data.filter(item => item.status_pengembalian === 'Dikembalikan');
       } catch (err) {
-        console.error('Gagal mengambil data:', err);
+        console.error('Gagal mengambil data peminjaman:', err);
       }
     },
     async fetchBarangTersedia() {
       try {
-        const res = await fetch('http://localhost:3000/barang');
+        const res = await fetch('http://127.0.0.1:8000/api/barang');
         const data = await res.json();
         this.barangTersedia = data.filter(b => b.status === "Tersedia");
       } catch (err) {
         console.error("Gagal mengambil data barang:", err);
       }
     },
-    async setujui(id) {
+    async setujuiPeminjaman(id) {
       try {
-        const token = localStorage.getItem('token');
-        const res = await fetch(`http://localhost:3000/peminjaman/setujui?id=${id}`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'X-User-Role': this.currentUser.role
-          }
-        });
-        const result = await res.json();
-        alert(result.message || 'Peminjaman disetujui');
-        this.fetchPeminjaman();
+        await fetch(`/peminjaman/setujui/${id}`, { method: 'POST' });
+        this.fetchPeminjaman(); // Refresh daftar peminjaman
       } catch (err) {
-        alert('Gagal menyetujui');
-        console.error(err);
+        console.error('Gagal menyetujui peminjaman:', err);
       }
     },
-    async tolak(id) {
+    async tolakPeminjaman(id) {
       try {
-        const res = await fetch(`http://localhost:3000/peminjaman/tolak?id=${id}`, {
-          method: 'POST',
-          headers: {
-            'X-User-Role': this.currentUser.role
-          }
-        });
-        const result = await res.json();
-        alert(result.message || 'Peminjaman ditolak');
-        this.fetchPeminjaman();
+        await fetch(`/peminjaman/{id}/tolak`, { method: 'POST' });
+        this.fetchPeminjaman(); // Refresh daftar peminjaman
       } catch (err) {
-        alert('Gagal menolak');
-        console.error(err);
+        console.error('Gagal menolak peminjaman:', err);
       }
+    },
+    openModal() {
+      this.showModal = true;
+    },
+    closeModal() {
+      this.showModal = false;
     },
     async submitPeminjaman() {
       try {
-        if (!this.formData.barang_id) {
-          alert('Pilih barang terlebih dahulu!');
-          return;
-        }
-
-        const method = this.isEdit ? 'PUT' : 'POST';
-        const url = this.isEdit
-          ? `http://localhost:3000/peminjaman?id=${this.formData.id}`
-          : 'http://localhost:3000/peminjaman';
-
-        const res = await fetch(url, {
-          method,
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(this.formData)
+        const res = await fetch('http://127.0.0.1:8000/api/peminjaman', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(this.formData),
         });
 
-        if (!res.ok) throw new Error('Gagal menyimpan');
-
-        alert(this.isEdit ? 'Data diperbarui' : 'Data ditambahkan');
-        this.showForm = false;
-        this.resetFormData();
-        this.fetchPeminjaman();
-        this.fetchBarangTersedia();
-      } catch (err) {
-        alert('Gagal menyimpan data');
-        console.error(err);
-      }
-    },
-    editPeminjaman(id) {
-      const item = [...this.daftarPeminjaman, ...this.riwayatPeminjaman].find(p => p.id === id);
-      if (item) {
-        this.formData = { ...item, barang_id: String(item.barang_id) };
-        this.isEdit = true;
-        this.showForm = true;
-      }
-    },
-    resetFormData() {
-      this.formData = {
-        id: null,
-        barang_id: '',
-        peminjam: '',
-        tanggal_peminjam: '',
-        tanggal_kembali: '',
-        status_peminjaman: 'Menunggu Persetujuan',
-        status_pengembalian: 'Dipinjam',
-      };
-      this.isEdit = false;
-    },
-    async hapusPeminjaman(id) {
-      if (confirm('Yakin ingin menghapus data ini?')) {
-        try {
-          const res = await fetch(`http://localhost:3000/peminjaman?id=${id}`, {
-            method: 'DELETE'
-          });
-          const result = await res.json();
-          alert(result.message);
-          this.fetchPeminjaman();
-        } catch (err) {
-          alert('Gagal menghapus data');
+        if (res.ok) {
+          this.closeModal();
+          this.fetchPeminjaman(); // Refresh daftar peminjaman
+        } else {
+          console.error('Gagal menambahkan peminjaman');
         }
+      } catch (err) {
+        console.error('Error saat menambahkan peminjaman:', err);
       }
     },
-    tambahPeminjam() {
-      this.showForm = !this.showForm;
-      if (this.showForm && !this.isEdit) {
-        this.fetchBarangTersedia();
-      }
-    }
   },
-  mounted() {
-    this.fetchPeminjaman();
-    this.fetchBarangTersedia();
-  },
-  watch: {
-    'formData.barang_id'(newId) {
-      this.selectedBarang = this.barangTersedia.find(b => b.id === newId) || null;
-    }
-  }
 };
 </script>
-
-
 
 <style scoped>
 .peminjaman {
