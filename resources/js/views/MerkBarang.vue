@@ -13,8 +13,22 @@
     <!-- Form Tambah / Edit -->
     <div v-if="!isKetuaYayasan && showForm" class="form-merk">
       <h3>{{ formMode === 'tambah' ? 'Tambah' : 'Edit' }} Merk</h3>
-      <input type="text" v-model="formData.kode_merk" placeholder="Kode Merk" disabled />
-      <input type="text" v-model="formData.nama_merk" placeholder="Nama Merk" />
+      
+      <!-- Form Kode Merk (Boleh diisi manual jika mode tambah) -->
+      <input 
+        type="text" 
+        v-model="formData.kode_merk" 
+        placeholder="Kode Merk" 
+        :disabled="formMode === 'edit'" 
+      />
+
+      <input 
+        type="text" 
+        v-model="formData.nama_merk" 
+        placeholder="Nama Merk" 
+        required 
+      />
+
       <button @click="submitForm" class="btn-simpan">Simpan</button>
       <button @click="batalForm" class="btn-batal">Batal</button>
     </div>
@@ -47,6 +61,8 @@
   </div>
 </template>
 
+
+
 <script>
 export default {
   data() {
@@ -76,7 +92,8 @@ export default {
   },
   methods: {
     fetchMerk() {
-      fetch('http://localhost:3000/merk')
+      // Ganti dengan URL API backend Anda jika diperlukan
+      fetch('http://localhost:8000/api/merk') 
         .then(res => res.json())
         .then(data => {
           this.merkList = data;
@@ -85,7 +102,7 @@ export default {
     generateKodeBaru() {
       const prefix = 'MK';
       const angkaList = this.merkList
-        .map(m => parseInt(m.kode_merk?.replace(prefix, '')))
+        .map(m => parseInt(m.kode_merk?.replace(prefix, '')) || 0)
         .filter(n => !isNaN(n));
 
       const maxAngka = angkaList.length > 0 ? Math.max(...angkaList) : 0;
@@ -113,15 +130,16 @@ export default {
     deleteMerk(id) {
       if (!confirm('Yakin ingin menghapus merk ini?')) return;
 
-      fetch(`http://localhost:3000/merk/${id}`, {
+      // Ganti URL API dengan endpoint yang benar
+      fetch(`http://localhost:8000/api/merk/${id}`, {
         method: 'DELETE'
       }).then(() => this.fetchMerk());
     },
     submitForm() {
       const method = this.formMode === 'tambah' ? 'POST' : 'PUT';
       const url = this.formMode === 'tambah'
-        ? 'http://localhost:3000/merk'
-        : `http://localhost:3000/merk/${this.formData.id}`;
+        ? 'http://localhost:8000/api/merk'
+        : `http://localhost:8000/api/merk/${this.formData.id}`;
 
       fetch(url, {
         method,
@@ -143,6 +161,7 @@ export default {
   }
 };
 </script>
+
 
 
 <style scoped>

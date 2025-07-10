@@ -1,12 +1,7 @@
 <template>
   <div class="dashboard">
     <main class="main-content">
-      <!-- <header class="header">
-        <button class="toggle-btn d-md-none" @click="sidebarOpen = !sidebarOpen">
-          <i class="bi bi-list" style="font-size: 1.5rem; color: #333;"></i>
-        </button>
-        <h1>Dashboard</h1>
-      </header> -->
+     
 
       <section class="content">
         <h2>Selamat datang di Dashboard Yayasan AL-Istiqomah</h2>

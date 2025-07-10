@@ -9,6 +9,7 @@ use App\Http\Controllers\PeminjamanController;
 use App\Http\Controllers\ServiceBarangController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\StatusController;
 
 //untuk route barang
 Route::get('/barang', [BarangController::class, 'index']);
@@ -53,6 +54,9 @@ Route::get('/service-barang/{id}', [ServiceBarangController::class, 'show']); //
 Route::put('/service-barang/{id}', [ServiceBarangController::class, 'update']); // ← Untuk update
 Route::delete('/service-barang/{id}', [ServiceBarangController::class, 'destroy']); // ← Untuk delete
 
+//route untuk status
+Route::get('/status', [StatusController::class, 'getStatus']);
+Route::get('/barang/status/{status}', [StatusController::class, 'getBarangByStatus']);
 
 
 Route::post('/login', [AuthController::class, 'login']);

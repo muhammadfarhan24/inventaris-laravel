@@ -34,15 +34,8 @@
             </option>
           </select>
 
-          <input v-if="form.status === 'Rusak'" v-model="form.deskripsi" placeholder="Deskripsi" />
-
-          <!-- Input gambar -->
-          <input type="file" @change="handleFileUpload" accept="image/*" />
-
-          <!-- Preview gambar -->
-          <div v-if="previewImage" class="image-preview">
-            <img :src="previewImage" alt="Preview Gambar" />
-          </div>
+          <!-- Selalu tampilkan input deskripsi -->
+          <input v-model="form.deskripsi" placeholder="Deskripsi" required />
 
           <button type="submit">Tambah</button>
         </form>
@@ -80,7 +73,7 @@
               <th>Status</th>
               <th>Deskripsi</th>
               <th>Created_at</th>
-              <th>Gambar</th>
+              <!-- <th>Gambar</th> -->
             </tr>
           </thead>
           <tbody>
@@ -90,11 +83,10 @@
               <td>{{ item.nama }}</td>
               <td>{{ item.kategori?.nama_kategori || '-' }}</td>
               <td>{{ item.merk?.nama_merk || '-' }}</td>
-              
               <td>{{ item.status }}</td>
               <td>{{ item.deskripsi }}</td>
               <td>{{ item.created_at }}</td>
-              <td>
+              <!-- <td>
                 <img
                   v-if="item.gambar"
                   :src="`http://localhost:3000/uploads/${item.gambar}`"
@@ -102,7 +94,7 @@
                   class="thumbnail"
                 />
                 <span v-else>-</span>
-              </td>
+              </td> -->
             </tr>
           </tbody>
         </table>
@@ -110,6 +102,7 @@
     </section>
   </div>
 </template>
+
 
 <script>
 export default {
@@ -128,8 +121,7 @@ export default {
         status: '',
         ruangan_id: '',
         deskripsi: ''
-      },
-      previewImage: null
+      }
     };
   },
   computed: {
@@ -151,15 +143,13 @@ export default {
     },
     async ambilDataBarang() {
       try {
-        const res = await this.$axios.get('http://127.0.0.1:8000/barang');
-        console.log('Data barang dari API:', res.data);
+        const res = await this.$axios.get('http://127.0.0.1:8000/api/barang');
         this.barangList = Array.isArray(res.data)
           ? res.data.map(b => ({
               ...b,
               status: b.status?.toLowerCase().trim()
             }))
           : [];
-        console.log('Semua barang setelah normalisasi:', this.barangList);
       } catch (err) {
         console.error('Gagal ambil data barang:', err);
         this.barangList = [];
@@ -167,7 +157,7 @@ export default {
     },
     async ambilDataRuangan() {
       try {
-        const res = await this.$api.get('/ruangan');
+        const res = await this.$axios.get('http://127.0.0.1:8000/api/ruangan');
         this.ruanganList = res.data;
       } catch (err) {
         console.error('Gagal ambil data ruangan:', err);
@@ -175,7 +165,7 @@ export default {
     },
     async ambilDataKategori() {
       try {
-        const res = await this.$api.get('/kategori');
+        const res = await this.$axios.get('http://127.0.0.1:8000/api/kategori');
         this.kategoriList = res.data;
       } catch (err) {
         console.error('Gagal ambil data kategori:', err);
@@ -183,14 +173,18 @@ export default {
     },
     async ambilDataMerk() {
       try {
-        const res = await this.$api.get('/merk');
+        const res = await this.$axios.get('http://127.0.0.1:8000/api/merk');
         this.merkList = res.data;
       } catch (err) {
         console.error('Gagal ambil data merk:', err);
       }
     },
     async tambahBarang() {
-      if (this.isKetuaYayasan) return;
+      // Pastikan semua field yang diperlukan sudah terisi
+      if (!this.form.kategori_id || !this.form.merk_id || !this.form.ruangan_id || !this.form.status || !this.form.nama) {
+        alert('Pastikan semua field terisi dengan benar!');
+        return;
+      }
 
       const payload = {
         nama: this.form.nama,
@@ -198,12 +192,12 @@ export default {
         merk_id: this.form.merk_id,
         status: this.form.status,
         ruangan_id: this.form.ruangan_id,
-        deskripsi: this.form.deskripsi,
-        kode_barang: Date.now()
+        deskripsi: this.form.deskripsi || '', // Deskripsi boleh kosong
+        kode_barang: Date.now() // Kode barang otomatis menggunakan timestamp
       };
 
       try {
-        await this.$api.post('/barang', payload);
+        await this.$axios.post('http://127.0.0.1:8000/api/barang', payload);
         this.form = {
           nama: '',
           kategori_id: '',
@@ -212,16 +206,9 @@ export default {
           ruangan_id: '',
           deskripsi: ''
         };
-        this.previewImage = null;
-        this.ambilDataBarang();
+        this.ambilDataBarang(); // Ambil data barang terbaru
       } catch (err) {
         console.error('Gagal tambah barang:', err);
-      }
-    },
-    handleFileUpload(event) {
-      const file = event.target.files[0];
-      if (file) {
-        this.previewImage = URL.createObjectURL(file);
       }
     }
   },
@@ -234,16 +221,12 @@ export default {
   watch: {
     'form.status'(newStatus) {
       if (newStatus !== 'Rusak') {
-        this.form.deskripsi = '';
+        this.form.deskripsi = ''; // Kosongkan deskripsi jika status bukan rusak
       }
     }
   }
 };
 </script>
-
-
-
-
 
 <style scoped>
 .main-content {
@@ -316,12 +299,6 @@ export default {
   border: none;
   border-radius: 4px;
   cursor: pointer;
-}
-.image-preview img {
-  max-width: 200px;
-  margin-top: 10px;
-  border-radius: 4px;
-  box-shadow: 0 0 6px rgba(0,0,0,0.2);
 }
 .thumbnail {
   max-width: 80px;

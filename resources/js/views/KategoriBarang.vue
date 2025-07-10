@@ -12,7 +12,7 @@
     <!-- Form Tambah / Edit -->
     <div v-if="!isKetuaYayasan && showForm" class="form-kategori">
       <h3>{{ formMode === 'tambah' ? 'Tambah' : 'Edit' }} Kategori</h3>
-      <input type="text" v-model="formData.kode_kategori" placeholder="Kode Kategori" disabled />
+      <input type="text" v-model="formData.kode_kategori" placeholder="Kode Kategori" :disabled="formMode === 'edit'" />
       <input type="text" v-model="formData.nama_kategori" placeholder="Nama Kategori" />
       <button @click="submitForm" class="btn-simpan">Simpan</button>
       <button @click="batalForm" class="btn-batal">Batal</button>
@@ -73,12 +73,13 @@ export default {
     }
   },
   methods: {
-    fetchKategori() {
-      fetch('http://localhost:3000/kategori')
-        .then(res => res.json())
-        .then(data => {
-          this.kategoriList = data;
-        });
+    async fetchKategori() {
+      try {
+        const res = await this.$axios.get('http://127.0.0.1:8000/api/kategori');
+        this.kategoriList = res.data;
+      } catch (err) {
+        console.error('Gagal mengambil data kategori:', err);
+      }
     },
     generateKodeBaru() {
       const prefix = 'KT';
@@ -100,36 +101,42 @@ export default {
       };
       this.showForm = true;
     },
-    editKategori(id) {
-      const kat = this.kategoriList.find(k => k.id === id);
-      if (kat) {
+    async editKategori(id) {
+      try {
+        const res = await this.$axios.get(`http://127.0.0.1:8000/api/kategori/${id}`);
         this.formMode = 'edit';
-        this.formData = { ...kat };
+        this.formData = res.data;
         this.showForm = true;
+      } catch (err) {
+        console.error('Gagal mengambil data kategori:', err);
       }
     },
-    deleteKategori(id) {
+    async deleteKategori(id) {
       if (!confirm('Yakin ingin menghapus kategori ini?')) return;
-      fetch(`http://localhost:3000/kategori/${id}`, {
-        method: 'DELETE'
-      }).then(() => this.fetchKategori());
+      try {
+        await this.$axios.delete(`http://127.0.0.1:8000/api/kategori/${id}`);
+        this.fetchKategori();
+      } catch (err) {
+        console.error('Gagal menghapus kategori:', err);
+      }
     },
-    submitForm() {
+    async submitForm() {
       const method = this.formMode === 'tambah' ? 'POST' : 'PUT';
       const url = this.formMode === 'tambah'
-        ? 'http://localhost:3000/kategori'
-        : `http://localhost:3000/kategori/${this.formData.id}`;
+        ? 'http://127.0.0.1:8000/api/kategori'
+        : `http://127.0.0.1:8000/api/kategori/${this.formData.id}`;
 
-      fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(this.formData)
-      })
-        .then(res => res.json())
-        .then(() => {
-          this.fetchKategori();
-          this.showForm = false;
+      try {
+        await this.$axios({
+          method,
+          url,
+          data: this.formData
         });
+        this.fetchKategori();
+        this.showForm = false;
+      } catch (err) {
+        console.error('Gagal menyimpan kategori:', err);
+      }
     },
     batalForm() {
       this.showForm = false;
@@ -140,7 +147,6 @@ export default {
   }
 };
 </script>
-
 
 <style scoped>
 .kategori-barang {
