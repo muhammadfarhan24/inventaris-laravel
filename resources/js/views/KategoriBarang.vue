@@ -75,7 +75,7 @@ export default {
   methods: {
     async fetchKategori() {
       try {
-        const res = await this.$axios.get('http://127.0.0.1:8000/api/kategori');
+        const res = await this.$api.get('http://127.0.0.1:8000/api/kategori');
         this.kategoriList = res.data;
       } catch (err) {
         console.error('Gagal mengambil data kategori:', err);
@@ -102,40 +102,43 @@ export default {
       this.showForm = true;
     },
     async editKategori(id) {
-      try {
-        const res = await this.$axios.get(`http://127.0.0.1:8000/api/kategori/${id}`);
+      const kategori = this.kategoriList.find(k => k.id === id);
+      if (kategori) {
         this.formMode = 'edit';
-        this.formData = res.data;
+        this.formData = { ...kategori };
         this.showForm = true;
-      } catch (err) {
-        console.error('Gagal mengambil data kategori:', err);
       }
     },
     async deleteKategori(id) {
       if (!confirm('Yakin ingin menghapus kategori ini?')) return;
       try {
-        await this.$axios.delete(`http://127.0.0.1:8000/api/kategori/${id}`);
+        await this.$api.delete(`http://127.0.0.1:8000/api/kategori/${id}`);
         this.fetchKategori();
       } catch (err) {
         console.error('Gagal menghapus kategori:', err);
       }
     },
     async submitForm() {
-      const method = this.formMode === 'tambah' ? 'POST' : 'PUT';
       const url = this.formMode === 'tambah'
         ? 'http://127.0.0.1:8000/api/kategori'
         : `http://127.0.0.1:8000/api/kategori/${this.formData.id}`;
 
+      const method = this.formMode === 'tambah' ? 'post' : 'put';
+
       try {
-        await this.$axios({
+        await this.$api({
           method,
           url,
-          data: this.formData
+          data: {
+            kode_kategori: this.formData.kode_kategori,
+            nama_kategori: this.formData.nama_kategori,
+          }
         });
         this.fetchKategori();
         this.showForm = false;
       } catch (err) {
-        console.error('Gagal menyimpan kategori:', err);
+        alert('Gagal menyimpan kategori');
+        console.error('Gagal simpan kategori:', err);
       }
     },
     batalForm() {
@@ -155,13 +158,11 @@ export default {
   border-radius: 8px;
   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
-
 .header-bar {
   display: flex;
   justify-content: space-between;
   margin-bottom: 20px;
 }
-
 .btn-tambah {
   background-color: #27ae60;
   color: white;
@@ -171,7 +172,6 @@ export default {
   cursor: pointer;
   font-weight: bold;
 }
-
 .search-bar {
   margin-bottom: 20px;
 }
@@ -181,7 +181,6 @@ export default {
   border: 1px solid #ccc;
   border-radius: 4px;
 }
-
 .kategori-table {
   width: 100%;
   border-collapse: collapse;
@@ -195,7 +194,6 @@ export default {
   background-color: #2c3e50;
   color: white;
 }
-
 .btn-edit {
   background-color: #3498db;
   color: white;
@@ -211,7 +209,6 @@ export default {
   border: none;
   border-radius: 4px;
 }
-
 .form-kategori {
   background: #f5f5f5;
   padding: 15px;

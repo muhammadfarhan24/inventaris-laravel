@@ -25,6 +25,7 @@ class UserController extends Controller
             'username' => 'required|string|unique:user,username',
             'password' => 'required|string|min:6',
             'role' => 'required|in:admin,ketua_masjid,ketua_yayasan',
+            'status' => 'nullable|string',
         ]);
 
         $validated['password'] = Hash::make($validated['password']);
@@ -45,6 +46,7 @@ class UserController extends Controller
             'username' => 'sometimes|string|unique:user,username,' . $id,
             'password' => 'sometimes|string|min:6',
             'role' => 'sometimes|in:admin,ketua_masjid,ketua_yayasan',
+            'status' => 'nullable|string',
         ]);
 
         if (isset($validated['password'])) {

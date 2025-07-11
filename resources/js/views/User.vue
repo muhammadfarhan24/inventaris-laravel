@@ -56,7 +56,7 @@
           <tbody>
             <tr v-for="(user, index) in filteredUsers" :key="user.id">
               <td>{{ index + 1 }}</td>
-              <td>{{ user.nama }}</td> <!-- Ganti 'name' dengan 'nama' jika API menggunakan nama -->
+              <td>{{ user.name }}</td> <!-- Ganti 'name' dengan 'nama' jika API menggunakan nama -->
               <td>{{ user.username }}</td>
               <td>{{ user.role }}</td>
               <td>{{ user.status }}</td>
@@ -122,15 +122,14 @@ export default {
         username: '',
         password: '',
         role: '',
-        status: 'Aktif'
+        status: 'Aktif' 
       },
       editUserData: {
         id: '',
         name: '',
         username: '',
         password: '',
-        role: '',
-        status: ''
+        role: ''
       }
     }
   },
@@ -141,9 +140,9 @@ export default {
     filteredUsers() {
       const q = this.searchQuery.toLowerCase();
       return this.users.filter(user =>
-        user.nama.toLowerCase().includes(q) ||
-        user.username.toLowerCase().includes(q) ||
-        user.role.toLowerCase().includes(q)
+        user.name?.toLowerCase().includes(q) ||
+        user.username?.toLowerCase().includes(q) ||
+        user.role?.toLowerCase().includes(q)
       );
     }
   },
@@ -159,7 +158,7 @@ export default {
     async hapusUser(id) {
       if (confirm("Yakin ingin menghapus user ini?")) {
         try {
-          await axios.delete(`http://127.0.0.1:8000/api/user/${id}`, this.getHeaders());
+          await axios.delete(`http://127.0.0.1:8000/api/user/${id}`);
           this.fetchUsers();
         } catch (err) {
           alert("Gagal menghapus user");
@@ -175,23 +174,29 @@ export default {
         username: '',
         password: '',
         role: '',
-        status: 'Aktif'
+        status: 'Aktif' 
       };
     },
     async simpanUserBaru() {
       try {
+        if (!this.formUser.name || !this.formUser.username || !this.formUser.password || !this.formUser.role) {
+          alert("Semua kolom wajib diisi");
+          return;
+        }
+
         await axios.post('http://127.0.0.1:8000/api/user', {
-          name: this.formUser.name, // Ganti dengan 'nama' sesuai API
+          name: this.formUser.name,
           username: this.formUser.username,
           password: this.formUser.password,
           role: this.formUser.role,
-          status: this.formUser.status
-        }, this.getHeaders());
+          status: this.formUser.status 
+        });
+
         this.showFormTambah = false;
         this.fetchUsers();
       } catch (err) {
-        alert("Gagal menambah user");
-        console.error(err);
+        console.log("DETAIL ERROR:", err.response?.data);
+        alert("Gagal update user");
       }
     },
     editUser(id) {
@@ -205,12 +210,11 @@ export default {
     async simpanEditUser() {
       try {
         await axios.put(`http://127.0.0.1:8000/api/user/${this.editUserData.id}`, {
-          name: this.editUserData.name, // Ganti dengan 'nama' sesuai API
+          name: this.editUserData.name,
           username: this.editUserData.username,
-          password: this.editUserData.password || '', // Kosongkan password jika tidak diubah
-          role: this.editUserData.role,
-          status: this.editUserData.status
-        }, this.getHeaders());
+          password: this.editUserData.password || '',
+          role: this.editUserData.role
+        });
         this.showFormEdit = false;
         this.fetchUsers();
       } catch (err) {
@@ -224,13 +228,13 @@ export default {
     async simpanProfil() {
       try {
         await axios.put(`http://127.0.0.1:8000/api/user/${this.currentUser.id}`, {
-          name: this.currentUser.name, // Ganti dengan 'nama' sesuai API
+          name: this.currentUser.name,
           username: this.currentUser.username,
-          password: '' // Kosongkan password jika tidak diubah
-        }, this.getHeaders());
+          password: ''
+        });
         alert("Profil berhasil diperbarui");
         this.showEditProfil = false;
-        localStorage.setItem('user', JSON.stringify(this.currentUser)); // Update di localStorage
+        localStorage.setItem('user', JSON.stringify(this.currentUser));
       } catch (err) {
         alert("Gagal memperbarui profil");
         console.error(err);
@@ -243,7 +247,7 @@ export default {
       try {
         await axios.put(`http://127.0.0.1:8000/api/user/${this.currentUser.id}/password`, {
           password: this.newPassword
-        }, this.getHeaders());
+        });
         alert("Password berhasil diperbarui");
         this.showGantiPassword = false;
       } catch (err) {
@@ -257,6 +261,7 @@ export default {
   }
 };
 </script>
+
 
 <style scoped>
 .user-page {

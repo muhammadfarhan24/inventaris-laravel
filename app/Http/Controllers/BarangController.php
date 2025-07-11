@@ -22,7 +22,7 @@ class BarangController extends Controller
             'status' => 'required|string',
             'ruangan_id' => 'nullable|exists:ruangan,id',
             'deskripsi' => 'required|string',
-            'kode_barang' => 'required|integer',
+            'kode_barang' => 'required|string',
         ]);
 
         $barang = Barang::create($data);
@@ -40,7 +40,7 @@ class BarangController extends Controller
             'status' => 'required|string',
             'ruangan_id' => 'nullable|exists:ruangan,id',
             'deskripsi' => 'required|string',
-            'kode_barang' => 'required|integer',
+            'kode_barang' => 'required|string',
         ]);
 
         $barang->update($data);

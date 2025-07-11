@@ -33,6 +33,7 @@
               {{ ruangan.nama }}
             </option>
           </select>
+          <input v-model="form.kode_barang" placeholder="Kode Barang (misal: KB001)" required />
 
           <!-- Selalu tampilkan input deskripsi -->
           <input v-model="form.deskripsi" placeholder="Deskripsi" required />
@@ -71,6 +72,7 @@
               <th>Kategori</th>
               <th>Merk</th>
               <th>Status</th>
+              <th>Kode Barang</th>
               <th>Deskripsi</th>
               <th>Created_at</th>
               <!-- <th>Gambar</th> -->
@@ -84,6 +86,7 @@
               <td>{{ item.kategori?.nama_kategori || '-' }}</td>
               <td>{{ item.merk?.nama_merk || '-' }}</td>
               <td>{{ item.status }}</td>
+              <td>{{ item.kode_barang }}</td>
               <td>{{ item.deskripsi }}</td>
               <td>{{ item.created_at }}</td>
               <!-- <td>
@@ -143,7 +146,7 @@ export default {
     },
     async ambilDataBarang() {
       try {
-        const res = await this.$api.get('/api/barang')
+        const res = await this.$api.get('http://127.0.0.1:8000/api/barang')
         this.barangList = Array.isArray(res.data)
           ? res.data.map(b => ({
               ...b,
@@ -157,7 +160,7 @@ export default {
     },
     async ambilDataRuangan() {
       try {
-        const res = await this.$api.get('/api/ruangan')
+        const res = await this.$api.get('http://127.0.0.1:8000/api/ruangan')
         this.ruanganList = res.data;
       } catch (err) {
         console.error('Gagal ambil data ruangan:', err);
@@ -165,7 +168,7 @@ export default {
     },
     async ambilDataKategori() {
       try {
-        const res = await this.$api.get('/api/kategori')
+        const res = await this.$api.get('http://127.0.0.1:8000/api/kategori')
         this.kategoriList = res.data;
       } catch (err) {
         console.error('Gagal ambil data kategori:', err);
@@ -173,7 +176,7 @@ export default {
     },
     async ambilDataMerk() {
       try {
-        const res = await this.$api.get('/api/merk')
+        const res = await this.$api.get('http://127.0.0.1:8000/api/merk')
         this.merkList = res.data;
       } catch (err) {
         console.error('Gagal ambil data merk:', err);
@@ -193,18 +196,19 @@ export default {
         status: this.form.status,
         ruangan_id: this.form.ruangan_id,
         deskripsi: this.form.deskripsi || '', // Deskripsi boleh kosong
-        kode_barang: Date.now() // Kode barang otomatis menggunakan timestamp
+        kode_barang: this.form.kode_barang // Kode barang otomatis menggunakan timestamp
       };
 
       try {
-        const res = await this.$api.get('/api/barang', payload);
+        const res = await this.$api.post('http://127.0.0.1:8000/api/barang', payload);
         this.form = {
           nama: '',
           kategori_id: '',
           merk_id: '',
           status: '',
           ruangan_id: '',
-          deskripsi: ''
+          deskripsi: '',
+          kode_barang: ''
         };
         this.ambilDataBarang(); // Ambil data barang terbaru
       } catch (err) {

@@ -1,7 +1,7 @@
 <template>
     <div class="login-page">
         <div class="login-card card shadow-sm p-4">
-            <h4 class="text-center mb-3">Login admin</h4>
+            <h4 class="text-center mb-3">Silahkan Login - Yayasan Al-Istiqomah</h4>
             <form @submit.prevent="handleLogin">
                 <div class="mb-3">
                     <label for="username" class="form-label">username</label>

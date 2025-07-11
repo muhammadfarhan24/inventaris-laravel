@@ -15,7 +15,7 @@
                      <ul v-show="barangMenuOpen" class="submenu">
                         <li><router-link to="/dashboard/daftar-barang">Daftar Barang</router-link></li>
                         <li><router-link to="/dashboard/kategori-barang">Kategori Barang</router-link></li>
-                        <li><router-link to="/dashboard/lokasi-barang">Lokasi Barang</router-link></li>
+                        <!-- <li><router-link to="/dashboard/lokasi-barang">Lokasi Barang</router-link></li> -->
                         <li><router-link to="/dashboard/merk-barang">Merk Barang</router-link></li>
                         <li><router-link to="/dashboard/status-barang">Status Barang</router-link></li>
                         <li><router-link to="/dashboard/peminjaman">Peminjaman</router-link></li>

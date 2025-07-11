@@ -5,28 +5,25 @@
       <button v-if="!isKetuaYayasan" class="btn-tambah" @click="tambahMerk">+ Tambah Merk</button>
     </div>
 
-    <!-- Kolom Search -->
     <div class="search-bar">
       <input type="text" v-model="searchQuery" placeholder="Cari Merk..." />
     </div>
 
-    <!-- Form Tambah / Edit -->
     <div v-if="!isKetuaYayasan && showForm" class="form-merk">
       <h3>{{ formMode === 'tambah' ? 'Tambah' : 'Edit' }} Merk</h3>
-      
-      <!-- Form Kode Merk (Boleh diisi manual jika mode tambah) -->
-      <input 
-        type="text" 
-        v-model="formData.kode_merk" 
-        placeholder="Kode Merk" 
-        :disabled="formMode === 'edit'" 
+
+      <input
+        type="text"
+        v-model="formData.kode_merk"
+        placeholder="Kode Merk"
+        :disabled="formMode === 'edit'"
       />
 
-      <input 
-        type="text" 
-        v-model="formData.nama_merk" 
-        placeholder="Nama Merk" 
-        required 
+      <input
+        type="text"
+        v-model="formData.nama_merk"
+        placeholder="Nama Merk"
+        required
       />
 
       <button @click="submitForm" class="btn-simpan">Simpan</button>
@@ -52,7 +49,6 @@
             <button @click="deleteMerk(merk.id)" class="btn-delete">Delete</button>
           </td>
         </tr>
-
         <tr v-if="filteredMerkList.length === 0">
           <td :colspan="isKetuaYayasan ? 3 : 4" style="text-align: center;">Data Tidak Ditemukan</td>
         </tr>
@@ -60,8 +56,6 @@
     </table>
   </div>
 </template>
-
-
 
 <script>
 export default {
@@ -91,23 +85,21 @@ export default {
     }
   },
   methods: {
-    fetchMerk() {
-      // Ganti dengan URL API backend Anda jika diperlukan
-      fetch('http://localhost:8000/api/merk') 
-        .then(res => res.json())
-        .then(data => {
-          this.merkList = data;
-        });
+    async fetchMerk() {
+      try {
+        const res = await this.$api.get('/api/merk');
+        this.merkList = res.data;
+      } catch (err) {
+        console.error('Gagal ambil merk:', err);
+      }
     },
     generateKodeBaru() {
       const prefix = 'MK';
       const angkaList = this.merkList
         .map(m => parseInt(m.kode_merk?.replace(prefix, '')) || 0)
         .filter(n => !isNaN(n));
-
       const maxAngka = angkaList.length > 0 ? Math.max(...angkaList) : 0;
       const nextAngka = maxAngka + 1;
-
       return prefix + nextAngka.toString().padStart(3, '0');
     },
     tambahMerk() {
@@ -127,30 +119,45 @@ export default {
         this.showForm = true;
       }
     },
-    deleteMerk(id) {
+    async deleteMerk(id) {
       if (!confirm('Yakin ingin menghapus merk ini?')) return;
-
-      // Ganti URL API dengan endpoint yang benar
-      fetch(`http://localhost:8000/api/merk/${id}`, {
-        method: 'DELETE'
-      }).then(() => this.fetchMerk());
+      try {
+        await this.$api.delete(`/api/merk/${id}`);
+        this.fetchMerk();
+      } catch (err) {
+        alert('Gagal menghapus merk');
+      }
     },
     submitForm() {
-      const method = this.formMode === 'tambah' ? 'POST' : 'PUT';
-      const url = this.formMode === 'tambah'
-        ? 'http://localhost:8000/api/merk'
-        : `http://localhost:8000/api/merk/${this.formData.id}`;
-
-      fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(this.formData)
-      })
-        .then(res => res.json())
-        .then(() => {
-          this.fetchMerk();
-          this.showForm = false;
+      if (this.formMode === 'tambah') {
+        this.simpanTambahMerk();
+      } else {
+        this.simpanEditMerk();
+      }
+    },
+    async simpanTambahMerk() {
+      try {
+        await this.$api.post('/api/merk', {
+          kode_merk: this.formData.kode_merk,
+          nama_merk: this.formData.nama_merk
         });
+        this.fetchMerk();
+        this.showForm = false;
+      } catch (err) {
+        alert('Gagal menambahkan merk');
+      }
+    },
+    async simpanEditMerk() {
+      try {
+        await this.$api.put(`/api/merk/${this.formData.id}`, {
+          kode_merk: this.formData.kode_merk,
+          nama_merk: this.formData.nama_merk
+        });
+        this.fetchMerk();
+        this.showForm = false;
+      } catch (err) {
+        alert('Gagal mengedit merk');
+      }
     },
     batalForm() {
       this.showForm = false;
@@ -162,8 +169,6 @@ export default {
 };
 </script>
 
-
-
 <style scoped>
 .merk-barang {
   padding: 20px;
@@ -171,13 +176,11 @@ export default {
   border-radius: 8px;
   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
-
 .header-bar {
   display: flex;
   justify-content: space-between;
   margin-bottom: 20px;
 }
-
 .btn-tambah {
   background-color: #27ae60;
   color: white;
@@ -187,7 +190,6 @@ export default {
   cursor: pointer;
   font-weight: bold;
 }
-
 .search-bar {
   margin-bottom: 20px;
 }
@@ -197,7 +199,6 @@ export default {
   border: 1px solid #ccc;
   border-radius: 4px;
 }
-
 .merk-table {
   width: 100%;
   border-collapse: collapse;
@@ -211,7 +212,6 @@ export default {
   background-color: #2c3e50;
   color: white;
 }
-
 .btn-edit {
   background-color: #3498db;
   color: white;
@@ -227,7 +227,6 @@ export default {
   border: none;
   border-radius: 4px;
 }
-
 .form-merk {
   background: #f5f5f5;
   padding: 15px;

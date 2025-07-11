@@ -3,18 +3,14 @@
     <h2>Service Barang</h2>
 
     <!-- Tombol tambah hanya tampil jika bukan ketua_yayasan -->
-    <button
-      v-if="!isKetuaYayasan"
-      class="btn-show-form"
-      @click="showForm = !showForm"
-    >
+    <button v-if="!isKetuaYayasan" class="btn-show-form" @click="toggleForm">
       {{ showForm ? 'Tutup Form' : '+ Tambah Barang ke Service' }}
     </button>
 
-    <!-- Form tambah service barang -->
+    <!-- Form tambah/edit service barang -->
     <div v-if="showForm && !isKetuaYayasan" class="form-service">
-      <h3>Tambah Barang ke Service</h3>
-      <form @submit.prevent="tambahService">
+      <h3>{{ formMode === 'tambah' ? 'Tambah' : 'Edit' }} Service</h3>
+      <form @submit.prevent="submitForm">
         <div class="form-row">
           <label>Nama Barang:</label>
           <select v-model="form.barang_id" required>
@@ -26,13 +22,14 @@
         </div>
         <div class="form-row">
           <label>Keterangan Kerusakan:</label>
-          <input v-model="form.kerusakan" type="text" required />
+          <input v-model="form.deskripsi" type="text" required />
         </div>
         <div class="form-row">
           <label>Tanggal Masuk:</label>
-          <input v-model="form.tanggalMasuk" type="date" required />
+          <input v-model="form.tanggal_service" type="date" required />
         </div>
         <button type="submit" class="btn-tambah">Simpan</button>
+        <button type="button" @click="batalForm" class="btn-batal">Batal</button>
       </form>
     </div>
 
@@ -46,32 +43,19 @@
             <th>Kerusakan</th>
             <th>Tanggal Masuk</th>
             <th>Status</th>
-            <th>Aksi</th>
+            <th v-if="!isKetuaYayasan">Aksi</th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="(item, index) in serviceList" :key="item.id">
             <td>{{ index + 1 }}</td>
-            <td>{{ item.barang ? item.barang.nama : 'Data Barang Tidak Ditemukan' }}</td> <!-- Menampilkan nama barang -->
+            <td>{{ item.barang?.nama || 'Barang tidak ditemukan' }}</td>
             <td>{{ item.deskripsi }}</td>
             <td>{{ item.tanggal_service }}</td>
             <td>{{ item.status }}</td>
-            <td>
-              <!-- Tombol aksi hanya tampil jika bukan ketua_yayasan -->
-              <button
-                v-if="!isKetuaYayasan"
-                @click="selesaiService(item.id)"
-                class="btn-selesai"
-              >
-                Selesai
-              </button>
-              <button
-                v-if="!isKetuaYayasan"
-                @click="hapusService(item.id)"
-                class="btn-delete"
-              >
-                Hapus
-              </button>
+            <td v-if="!isKetuaYayasan">
+              <button @click="selesaiService(item.id)" class="btn-selesai">Selesai</button>
+              <button @click="hapusService(item.id)" class="btn-delete">Hapus</button>
             </td>
           </tr>
         </tbody>
@@ -85,15 +69,18 @@ export default {
   name: "ServiceBarang",
   data() {
     return {
+      formMode: 'tambah',
       showForm: false,
       form: {
+        id: null,
         barang_id: '',
-        kerusakan: '',
-        tanggalMasuk: '',
+        deskripsi: '',
+        tanggal_service: '',
+        status: 'Dalam Service'
       },
       serviceList: [],
       barangList: [],
-      currentUser: JSON.parse(localStorage.getItem('user')) || {}
+      currentUser: JSON.parse(localStorage.getItem('user') || '{}')
     };
   },
   computed: {
@@ -101,88 +88,86 @@ export default {
       return this.currentUser.role === 'ketua_yayasan';
     }
   },
+  methods: {
+    toggleForm() {
+      this.showForm = !this.showForm;
+      this.resetForm();
+    },
+    resetForm() {
+      this.formMode = 'tambah';
+      this.form = {
+        id: null,
+        barang_id: '',
+        deskripsi: '',
+        tanggal_service: '',
+        status: 'Dalam Service'
+      };
+    },
+    async getServiceList() {
+      try {
+        const res = await this.$api.get('/api/service-barang');
+        this.serviceList = res.data;
+      } catch (err) {
+        console.error("Gagal ambil data service:", err);
+      }
+    },
+    async ambilBarangList() {
+      try {
+        const res = await this.$api.get('/api/barang');
+        this.barangList = res.data.filter(b => b.status === "Rusak");
+      } catch (err) {
+        console.error("Gagal ambil barang:", err);
+      }
+    },
+    async submitForm() {
+      const payload = {
+        barang_id: this.form.barang_id,
+        deskripsi: this.form.deskripsi,
+        tanggal_service: this.form.tanggal_service,
+        // status: this.form.status
+      };
+
+      try {
+        if (this.formMode === 'tambah') {
+          await this.$api.post('/api/service-barang', payload);
+        } else {
+          await this.$api.put(`/api/service-barang/${this.form.id}`, {
+        ...payload,
+        status: this.form.status
+      });
+        }
+
+        this.getServiceList();
+        this.toggleForm();
+      } catch (err) {
+        console.error("Gagal simpan data service:", err);
+        alert("Gagal menyimpan data.");
+      }
+    },
+    async selesaiService(id) {
+      try {
+        await this.$api.put(`/api/service-barang/${id}`, { status: 'Selesai' });
+        this.getServiceList();
+      } catch (err) {
+        console.error("Gagal update status:", err);
+      }
+    },
+    async hapusService(id) {
+      if (!confirm("Yakin ingin menghapus data ini?")) return;
+      try {
+        await this.$api.delete(`/api/service-barang/${id}`);
+        this.getServiceList();
+      } catch (err) {
+        console.error("Gagal hapus data:", err);
+      }
+    },
+    batalForm() {
+      this.toggleForm();
+    }
+  },
   mounted() {
     this.getServiceList();
     this.ambilBarangList();
-  },
-  methods: {
-    // Ambil daftar service barang
-    getServiceList() {
-      fetch("http://localhost:8000/api/service-barang")
-        .then(res => res.json())
-        .then(data => {
-          console.log("Data Service:", data);  // Periksa data di console
-          this.serviceList = data;  // Mengisi data ke dalam serviceList
-        })
-        .catch((error) => {
-          console.error("Gagal mengambil data service:", error);
-          alert("Gagal mengambil data service.");
-        });
-    },
-
-    // Ambil daftar barang yang rusak
-    async ambilBarangList() {
-      try {
-        const res = await fetch("http://localhost:8000/api/barang");
-        const data = await res.json();
-        console.log("Barang List:", data);  // Periksa data barang yang diterima
-        this.barangList = data.filter(b => b.status === "Rusak");
-      } catch (err) {
-        console.error("Gagal mengambil data barang:", err);
-      }
-    },
-
-    // Menambah barang ke service
-    tambahService() {
-      if (this.isKetuaYayasan) {
-        alert('Anda tidak memiliki akses untuk menambah service.');
-        return;
-      }
-      const payload = {
-        barang_id: this.form.barang_id,
-        deskripsi: this.form.kerusakan,
-        tanggal_service: this.form.tanggalMasuk,
-        status: "Dalam Service"
-      };
-      fetch("http://localhost:8000/api/service-barang", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      })
-        .then(() => {
-          this.getServiceList();
-          this.form = { barang_id: '', kerusakan: '', tanggalMasuk: '' };
-          this.showForm = false;
-        })
-        .catch(() => alert("Gagal menambah data."));
-    },
-
-    // Menandai service sebagai selesai
-    selesaiService(id) {
-      if (this.isKetuaYayasan) {
-        alert('Anda tidak memiliki akses untuk mengubah status service.');
-        return;
-      }
-      fetch(`http://localhost:8000/api/service-barang/selesai?id=${id}`, {
-        method: "PUT"
-      })
-        .then(() => this.getServiceList())
-        .catch(() => alert("Gagal update status."));
-    },
-
-    // Menghapus data service
-    hapusService(id) {
-      if (this.isKetuaYayasan) {
-        alert('Anda tidak memiliki akses untuk menghapus service.');
-        return;
-      }
-      if (!confirm("Hapus data service ini?")) return;
-      fetch(`http://localhost:8000/api/service-barang/${id}`, {
-        method: "DELETE"
-      })
-        .then(() => this.getServiceList())
-        .catch(() => alert("Gagal menghapus data."));
-    }
   }
 };
 </script>

@@ -15,14 +15,17 @@ class ServiceBarangController extends Controller
     }
 
     public function store(Request $request)
-    {
+{
+    try {
         $request->validate([
             'barang_id' => 'required|exists:barang,id',
             'deskripsi' => 'required|string',
             'tanggal_service' => 'required|date',
         ]);
-        $barang = Barang::findOrFail($request->barang_id);
-        ServiceBarang::create([
+
+        $barang = \App\Models\Barang::findOrFail($request->barang_id);
+
+        $service = ServiceBarang::create([
             'barang_id' => $request->barang_id,
             'nama_barang' => $barang->nama,
             'deskripsi' => $request->deskripsi,
@@ -30,12 +33,18 @@ class ServiceBarangController extends Controller
             'status' => 'Service',
         ]);
 
-        $barang = Barang::find($request->barang_id);
         $barang->status = 'Service';
         $barang->save();
 
-        return response()->json(['message' => 'Barang berhasil masuk service dan status diperbarui.']);
+            return response()->json([
+        'message' => 'Service berhasil ditambahkan.',
+    ], 201); // <== penting agar tidak dianggap error
+
+    } catch (\Throwable $e) {
+        return response()->json(['error' => $e->getMessage()], 500);
     }
+}
+
 
     public function destroy($id)
     {
@@ -52,4 +61,30 @@ class ServiceBarangController extends Controller
 
         return response()->json(['message' => 'Data service berhasil dihapus']);
     }
+
+    public function update(Request $request, $id)
+{
+    try {
+        $service = ServiceBarang::findOrFail($id);
+
+        if ($request->has('status')) {
+            $service->status = $request->status;
+            $service->save();
+
+            // Juga update status barang terkait
+            $barang = $service->barang;
+            if ($barang) {
+                $barang->status = $request->status;
+                $barang->save();
+            }
+
+            return response()->json(['message' => 'Status service diperbarui.']);
+        }
+
+        return response()->json(['message' => 'Tidak ada data untuk diperbarui.'], 400);
+    } catch (\Throwable $e) {
+        return response()->json(['error' => $e->getMessage()], 500);
+    }
+}
+
 }
